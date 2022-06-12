@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.dto.ErrorDTO;
 import com.example.demo.entity.GymClass;
 import com.example.demo.entity.Member;
 import com.example.demo.entity.Memberships;
@@ -42,9 +43,11 @@ public class ClassServiceImpl implements ClassService{
 	}
 
 	public String addGymCLass(GymClassRequest gymClassRequest) {
-		if(isRequestInvalid(gymClassRequest)){
-			return "Please check request again ";
+		ErrorDTO error = new ErrorDTO();
+		if(isRequestInvalid(gymClassRequest, error)){
+			return error.getErrorMessage();
 		}
+		
 		GymClass gymClass = new GymClass.GymClassBuilder()
 							.withName(gymClassRequest.getName())
 							.withCapacity(gymClassRequest.getCapacity())
@@ -58,8 +61,9 @@ public class ClassServiceImpl implements ClassService{
 	}
 
 	public String bookClass(ClassBookingRequest bookingRequest) {
+		ErrorDTO errorDTO = new ErrorDTO();
 		
-		if(isMembershipRequestValid(bookingRequest)){
+		if(isMembershipRequestValid(bookingRequest, errorDTO)){
 			Memberships memberships = new Memberships.MembershipsBuilder()
 											.withMemberId(bookingRequest.getMemberNumber())
 											.withClassId(bookingRequest.getClassNumber())
@@ -68,12 +72,12 @@ public class ClassServiceImpl implements ClassService{
 			membershipsRepository.save(memberships);
 			
 		}else{
-			return "Request is not Valid";
+			return errorDTO.getErrorMessage();
 		}
 		return "Added successfully!!";
 	}
 	
-	private boolean isRequestInvalid(GymClassRequest gymClassRequest){
+	private boolean isRequestInvalid(GymClassRequest gymClassRequest, ErrorDTO errorDTO){
 		
 		Date startDate = getDate(gymClassRequest.getStartDate());
 		Date endDate = getDate(gymClassRequest.getEndDate());
@@ -81,17 +85,22 @@ public class ClassServiceImpl implements ClassService{
 		boolean isValidEndDate = Objects.nonNull(endDate);
 		
 		if(!(isValidStartDate && isValidEndDate) ){
-			return true;
-		}
-		
-		if(!endDate.after(startDate)){
-			return true;
+			if(!endDate.after(startDate)){
+				return true;
+			}
+			else{
+				errorDTO.setErrorMessage("End date should be after start date");
+			}
+		}else {
+			if(errorDTO.getErrorMessage().isEmpty()){
+				errorDTO.setErrorMessage("Start date and end date should be format dd/MM/YYYY");
+			}
 		}
 		
 		return false;
 	}
 	
-	private boolean isMembershipRequestValid(ClassBookingRequest bookingRequest){
+	private boolean isMembershipRequestValid(ClassBookingRequest bookingRequest, ErrorDTO errorDTO){
 		//check if class number is valid 
 		Optional<GymClass> gymClass = classRepository.findById(bookingRequest.getClassNumber());
 		if(gymClass.isPresent()){
@@ -105,15 +114,17 @@ public class ClassServiceImpl implements ClassService{
 					return true;
 				}
 				else{
+					errorDTO.setErrorMessage("Please check booking date in request it needs to be in between "+ startDate + endDate);
 					return false;
 				}
 			}else{
+				errorDTO.setErrorMessage("Please check member number in request");
 				return false;
 			}
 		}else{
+			errorDTO.setErrorMessage("Please check class number in request");
 			return false;
 		}
-		//return true;
 	}
 	
 	private Date getDate(String date){
@@ -125,5 +136,4 @@ public class ClassServiceImpl implements ClassService{
 		}
 		return parsedDate;
 	}
-
 }

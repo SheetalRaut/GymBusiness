@@ -3,7 +3,8 @@ package com.example.demo.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,18 +21,18 @@ public class MemberController {
 	@Autowired
 	private MemberService memberService; 
 	
-	@GetMapping(value = "/getAllMembers", produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<Member> getAll(){
-		return memberService.getAllMembers();
+	@GetMapping(value = "/getAllMembers")
+	public ResponseEntity<List<Member>> getAll(){
+		return new ResponseEntity<List<Member>>(memberService.getAllMembers(), HttpStatus.OK);
 	}
 	
-	@GetMapping(value = "/getMember/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public Member getMemberById(@PathVariable Integer id){
-		return memberService.getMemberById(id);
+	@GetMapping(value = "/getMember/{id}")
+	public ResponseEntity<Member> getMemberById(@PathVariable Integer id){
+		return new ResponseEntity<Member>(memberService.getMemberById(id),HttpStatus.OK);
 	}
 	
 	@PostMapping(name = "/addMember")
-	public String addMember(@RequestBody MemberRequest member){
-		return memberService.saveMember(member);
+	public ResponseEntity<String> addMember(@RequestBody MemberRequest member){
+		return new ResponseEntity<String>(memberService.saveMember(member), HttpStatus.OK);
 	}
 }
